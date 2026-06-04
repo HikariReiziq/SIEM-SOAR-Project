@@ -1,4 +1,3 @@
-
 # SIEM-SOAR Project
 ## Wazuh SIEM + Shuffle SOAR: DDoS Detection & Automated Response
 
@@ -205,7 +204,7 @@ hosts:
 Gunakan password dari Step 1 untuk mendapatkan token:
 
 ```bash
-TOKEN=$(curl -s -k -u "wazuh-wui:********************************" \
+TOKEN=$(curl -s -k -u "wazuh-wui:<password>" \
   -X POST \
   "https://localhost:55000/security/user/authenticate?raw=true") \
   && echo "Token: $TOKEN"
@@ -240,7 +239,7 @@ Output yang diharapkan:
 curl -s -k -X POST "https://localhost:55000/security/users" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"username":"shuffle-user","password":"******************"}' \
+  -d '{"username":"shuffle-user","password":"<password>"}' \
   | python3 -m json.tool
 ```
 
@@ -272,7 +271,7 @@ Output yang diharapkan:
 ### STEP 6 — Test Login sebagai shuffle-user
 
 ```bash
-TOKEN2=$(curl -s -k -u "shuffle-user:******************" \
+TOKEN2=$(curl -s -k -u "shuffle-user:<password>" \
   -X POST \
   "https://localhost:55000/security/user/authenticate?raw=true") \
   && echo "Token shuffle-user: $TOKEN2"
@@ -287,7 +286,7 @@ TOKEN2=$(curl -s -k -u "shuffle-user:******************" \
 | Field | Value |
 |---|---|
 | Username | `shuffle-user` |
-| Password | `******************` |
+| Password | `<password>` |
 | User ID | `100` |
 | Role | Administrator (role_id: 1) |
 | API Port | `55000` |
@@ -305,33 +304,62 @@ Shuffle lokal tidak bisa diinstall di a6-manager karena RAM sudah penuh (3.4GB/3
 1. Buka [shuffler.io](https://shuffler.io) → Login
 2. Klik **"+ Create Workflow"**
 3. Nama: `Wazuh DDoS Response`
-4. Tambahkan 3 node:
+4. Tambahkan 3 node sesuai langkah berikut
 
-### Node 1 — Webhook (Trigger)
+---
 
-- Drag **Webhook** dari panel kiri ke kanvas
-- Klik **"Start"** untuk mengaktifkan
-- Copy **Webhook URI** yang muncul
+### STEP 1 — Tampilan Awal Kanvas & Node Block-Attacker-IP
 
-### Node 2 — Get-Wazuh-Token
+Setelah workflow dibuat, kanvas kosong akan muncul dengan node default "Change Me".
+
+![Setup Shuffle Step 1-1](Image/SetupShuffle_Step1-1_BlockAttackerIP.png)
+
+Ganti node "Change Me" menjadi app **HTTP** dengan konfigurasi Block-Attacker-IP. Hasil akhir kanvas akan terlihat seperti ini dengan 3 node terhubung:
+
+![Setup Shuffle Step 1-5](Image/SetupShuffle_Step1-5_BlockAttackerIP_and_GetWazzuh_Token.png)
+
+---
+
+### STEP 2 — Setup Node Webhook (Trigger)
+
+Drag **Webhook** dari panel kiri ke kanvas. Klik node Webhook untuk melihat konfigurasi:
+
+![Setup Shuffle Step 2](Image/SetupShuffle_Step2_Setup_Webhook.png)
+
+- Klik tombol **"Start"** untuk mengaktifkan webhook
+- Copy **Webhook URI** yang muncul — URI ini akan dimasukkan ke `ossec.conf` Wazuh
+
+---
+
+### STEP 3 — Setup Node Get-Wazuh-Token
+
+Tambahkan node HTTP baru, beri nama **Get-Wazuh-Token**:
+
+![Setup Shuffle Step 3](Image/SetupShuffle_Step3_Setup_GetWazzuh_Token.png)
 
 | Field | Value |
 |---|---|
 | App | HTTP |
 | Action | POST |
-| URL | `https://***.***.***.***:55000/security/user/authenticate?raw=true` |
+| URL | `https://<manager-public-ip>:55000/security/user/authenticate?raw=true` |
 | Headers | `Content-Type: application/json` |
 | Username | `shuffle-user` |
-| Password | `******************` |
+| Password | `<shuffle-user-password>` |
 | Verify | False |
 
-### Node 3 — Block-Attacker-IP
+---
+
+### STEP 4 — Setup Node Block-Attacker-IP
+
+Tambahkan node HTTP ketiga, beri nama **Block-Attacker-IP**:
+
+![Setup Shuffle Step 4](Image/SetupShuffle_Step4_Setup_BlockIP_Token.png)
 
 | Field | Value |
 |---|---|
 | App | HTTP |
 | Action | **PUT** |
-| URL | `https://***.***.***.***:55000/active-response` |
+| URL | `https://<manager-public-ip>:55000/active-response` |
 | Headers | `Authorization: Bearer $Get-Wazuh-Token.body` + newline + `Content-Type: application/json` |
 | Verify | False |
 
@@ -347,6 +375,52 @@ Body:
   }
 }
 ```
+
+---
+
+### STEP 5 — Test Action: Get-Wazuh-Token
+
+Klik **"Test Action"** pada node Get-Wazuh-Token untuk memastikan token berhasil didapat:
+
+![Setup Shuffle Step 5](Image/SetupShuffle_Step5_TestAction_GetWazzuh_Token.png)
+
+Output yang diharapkan:
+```json
+{
+  "status": 200,
+  "body": "eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9...",
+  "success": true
+}
+```
+
+> ✅ Status 200 dan token JWT muncul di field `body` — berarti autentikasi berhasil.
+
+---
+
+### STEP 6 — Test Action: Block-Attacker-IP
+
+Klik **"Test Action"** pada node Block-Attacker-IP:
+
+![Setup Shuffle Step 6](Image/SetupShuffle_Step6_TestAction_BlockAttackerIP.png)
+
+Output yang diharapkan:
+```json
+{
+  "status": 200,
+  "body": {
+    "data": {
+      "affected_items": ["001", "002"],
+      "total_affected_items": 2,
+      "total_failed_items": 0,
+      "failed_items": []
+    },
+    "message": "AR command was sent to all agents",
+    "error": 0
+  }
+}
+```
+
+> ✅ Status 200 dan "AR command was sent to all agents" — IP penyerang berhasil diblokir di **semua agent**!
 
 ### Alur Final Workflow
 
@@ -392,7 +466,7 @@ sudo tail -f /var/ossec/logs/integrations.log
 
 Output saat berhasil:
 ```
-/tmp/shuffle-XXXXX.alert  https://shuffler.io/api/v1/hooks/webhook_********-...
+/tmp/shuffle-XXXXX.alert  https://shuffler.io/api/v1/hooks/webhook_...
 ```
 
 ---
@@ -400,6 +474,8 @@ Output saat berhasil:
 ## 🎯 Bagian 5: Demo & Hasil
 
 ### Skenario Serangan DDoS
+
+Buka 3 terminal SSH sekaligus:
 
 **Terminal 1 — agent2 (attacker):**
 ```bash
@@ -476,6 +552,13 @@ SIEM-SOAR-Project/
 │   README.md
 │
 └───Image/
+        SetupShuffle_Step1-1_BlockAttackerIP.png
+        SetupShuffle_Step1-5_BlockAttackerIP_and_GetWazzuh_Token.png
+        SetupShuffle_Step2_Setup_Webhook.png
+        SetupShuffle_Step3_Setup_GetWazzuh_Token.png
+        SetupShuffle_Step4_Setup_BlockIP_Token.png
+        SetupShuffle_Step5_TestAction_GetWazzuh_Token.png
+        SetupShuffle_Step6_TestAction_BlockAttackerIP.png
         WazzuhApi_step1_Setup_WazzuhAPI.png
         WazzuhApi_step2_WazzuhToken.png
         WazzuhApi_step3_Test List Agents.png
@@ -491,5 +574,3 @@ SIEM-SOAR-Project/
   <p>Manajemen Insiden Keamanan Siber</p>
 </div>
 ```
-
----
