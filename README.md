@@ -92,9 +92,9 @@ IP Penyerang di-DROP di SEMUA Agent (Global Block)
 
 | VM | Public IP | Private IP | Peran | Size | OS |
 |---|---|---|---|---|---|
-| a6-manager | 104.214.169.40 | 10.0.0.4 | Wazuh Manager | Standard B2als v2 | Ubuntu 24.04 LTS |
-| a6-agent | 104.214.177.46 | 10.0.0.5 | Korban/Target | Standard B2ats v2 | Ubuntu 24.04 LTS |
-| a6-agent2 | 20.187.147.134 | 10.0.0.6 | Penyerang | Standard B2ats v2 | Ubuntu 24.04 LTS |
+| a6-manager | ***.***.***.*** | 10.0.0.4 | Wazuh Manager | Standard B2als v2 | Ubuntu 24.04 LTS |
+| a6-agent | ***.***.***.*** | 10.0.0.5 | Korban/Target | Standard B2ats v2 | Ubuntu 24.04 LTS |
+| a6-agent2 | ***.***.***.*** | 10.0.0.6 | Penyerang | Standard B2ats v2 | Ubuntu 24.04 LTS |
 
 ### NSG Rules yang Dibuka
 
@@ -165,7 +165,7 @@ File: `/var/ossec/etc/rules/local_rules.xml`
 <!-- Integrasi ke Shuffle SOAR -->
 <integration>
   <name>shuffle</name>
-  <hook_url>https://shuffler.io/api/v1/hooks/webhook_c99cc04a-5318-452d-844b-17b81f291215</hook_url>
+  <hook_url>https://shuffler.io/api/v1/hooks/webhook_********-****-****-****-************</hook_url>
   <rule_id>100011</rule_id>
   <alert_format>json</alert_format>
 </integration>
@@ -187,7 +187,7 @@ SSH ke manager, lalu jalankan:
 sudo tail /usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
 ```
 
-![Step 1 - Wazuh API](Image/Step1_WazzuhAPI.png)
+![Step 1 - Wazuh API](Image/WazzuhApi_step1_Setup_WazzuhAPI.png)
 
 Output yang didapat:
 ```
@@ -196,7 +196,7 @@ hosts:
       url: https://localhost
       port: 55000
       username: wazuh-wui
-      password: "3?7ErAdv704q*nfK1a2fzV9tv1o6HzUw"
+      password: "********************************"
       run_as: false
 ```
 
@@ -205,13 +205,13 @@ hosts:
 Gunakan password dari Step 1 untuk mendapatkan token:
 
 ```bash
-TOKEN=$(curl -s -k -u "wazuh-wui:3?7ErAdv704q*nfK1a2fzV9tv1o6HzUw" \
+TOKEN=$(curl -s -k -u "wazuh-wui:********************************" \
   -X POST \
   "https://localhost:55000/security/user/authenticate?raw=true") \
   && echo "Token: $TOKEN"
 ```
 
-![Step 2 - Wazuh Token](Image/Step2_WazzuhToken.png)
+![Step 2 - Wazuh Token](Image/WazzuhApi_step2_WazzuhToken.png)
 
 > ✅ Jika token panjang muncul, berarti Wazuh API berfungsi dengan baik.
 
@@ -225,7 +225,7 @@ curl -s -k -X GET "https://localhost:55000/agents?pretty=true" \
   | python3 -m json.tool | grep -E "name|status|ip"
 ```
 
-![Step 3 - Test List Agents](Image/step3_Test%20List%20Agents.png)
+![Step 3 - Test List Agents](Image/WazzuhApi_step3_Test%20List%20Agents.png)
 
 Output yang diharapkan:
 ```
@@ -240,11 +240,11 @@ Output yang diharapkan:
 curl -s -k -X POST "https://localhost:55000/security/users" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"username":"shuffle-user","password":"Shuffle@Wazuh2026!"}' \
+  -d '{"username":"shuffle-user","password":"******************"}' \
   | python3 -m json.tool
 ```
 
-![Step 4 - Buat User shuffle-user](Image/step4_Buat%20User%20shuffle-user.png)
+![Step 4 - Buat User shuffle-user](Image/WazzuhApi_step4_Buat%20User%20shuffle-user.png)
 
 > ✅ Catat nomor `id` yang muncul — dalam kasus ini **id: 100**
 
@@ -259,7 +259,7 @@ curl -s -k -X POST \
   | python3 -m json.tool
 ```
 
-![Step 5 - Assign Role Administrator](Image/step5_Assign%20Role%20Administrator%20ke%20shuffle-user.png)
+![Step 5 - Assign Role Administrator](Image/WazzuhApi_step5_Assign%20Role%20Administrator%20ke%20shuffle-user.png)
 
 Output yang diharapkan:
 ```json
@@ -272,13 +272,13 @@ Output yang diharapkan:
 ### STEP 6 — Test Login sebagai shuffle-user
 
 ```bash
-TOKEN2=$(curl -s -k -u "shuffle-user:Shuffle@Wazuh2026!" \
+TOKEN2=$(curl -s -k -u "shuffle-user:******************" \
   -X POST \
   "https://localhost:55000/security/user/authenticate?raw=true") \
   && echo "Token shuffle-user: $TOKEN2"
 ```
 
-![Step 6 - Test Login shuffle-user](Image/step6_Test%20Login%20sebagai%20shuffle-user.png)
+![Step 6 - Test Login shuffle-user](Image/WazzuhApi_step6_Test%20Login%20sebagai%20shuffle-user.png)
 
 > ✅ Jika token muncul, user shuffle-user siap digunakan oleh Shuffle SOAR.
 
@@ -287,7 +287,7 @@ TOKEN2=$(curl -s -k -u "shuffle-user:Shuffle@Wazuh2026!" \
 | Field | Value |
 |---|---|
 | Username | `shuffle-user` |
-| Password | `Shuffle@Wazuh2026!` |
+| Password | `******************` |
 | User ID | `100` |
 | Role | Administrator (role_id: 1) |
 | API Port | `55000` |
@@ -319,10 +319,10 @@ Shuffle lokal tidak bisa diinstall di a6-manager karena RAM sudah penuh (3.4GB/3
 |---|---|
 | App | HTTP |
 | Action | POST |
-| URL | `https://104.214.169.40:55000/security/user/authenticate?raw=true` |
+| URL | `https://***.***.***.***:55000/security/user/authenticate?raw=true` |
 | Headers | `Content-Type: application/json` |
 | Username | `shuffle-user` |
-| Password | `Shuffle@Wazuh2026!` |
+| Password | `******************` |
 | Verify | False |
 
 ### Node 3 — Block-Attacker-IP
@@ -331,7 +331,7 @@ Shuffle lokal tidak bisa diinstall di a6-manager karena RAM sudah penuh (3.4GB/3
 |---|---|
 | App | HTTP |
 | Action | **PUT** |
-| URL | `https://104.214.169.40:55000/active-response` |
+| URL | `https://***.***.***.***:55000/active-response` |
 | Headers | `Authorization: Bearer $Get-Wazuh-Token.body` + newline + `Content-Type: application/json` |
 | Verify | False |
 
@@ -371,7 +371,7 @@ Tambahkan sebelum `</ossec_config>`:
 ```xml
 <integration>
   <name>shuffle</name>
-  <hook_url>https://shuffler.io/api/v1/hooks/webhook_c99cc04a-5318-452d-844b-17b81f291215</hook_url>
+  <hook_url>https://shuffler.io/api/v1/hooks/webhook_********-****-****-****-************</hook_url>
   <rule_id>100011</rule_id>
   <alert_format>json</alert_format>
 </integration>
@@ -392,7 +392,7 @@ sudo tail -f /var/ossec/logs/integrations.log
 
 Output saat berhasil:
 ```
-/tmp/shuffle-XXXXX.alert  https://shuffler.io/api/v1/hooks/webhook_c99cc04a-...
+/tmp/shuffle-XXXXX.alert  https://shuffler.io/api/v1/hooks/webhook_********-...
 ```
 
 ---
@@ -476,12 +476,12 @@ SIEM-SOAR-Project/
 │   README.md
 │
 └───Image/
-        Step1_WazzuhAPI.png
-        Step2_WazzuhToken.png
-        step3_Test List Agents.png
-        step4_Buat User shuffle-user.png
-        step5_Assign Role Administrator ke shuffle-user.png
-        step6_Test Login sebagai shuffle-user.png
+        WazzuhApi_step1_Setup_WazzuhAPI.png
+        WazzuhApi_step2_WazzuhToken.png
+        WazzuhApi_step3_Test List Agents.png
+        WazzuhApi_step4_Buat User shuffle-user.png
+        WazzuhApi_step5_Assign Role Administrator ke shuffle-user.png
+        WazzuhApi_step6_Test Login sebagai shuffle-user.png
 ```
 
 ---
