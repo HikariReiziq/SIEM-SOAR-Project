@@ -475,7 +475,7 @@ Output saat berhasil:
 
 ### Skenario Serangan DDoS
 
-Buka 3 terminal SSH sekaligus:
+Buka 4 terminal SSH sekaligus:
 
 **Terminal 1 — agent2 (attacker):**
 ```bash
@@ -497,6 +497,14 @@ sudo tail -f /var/ossec/logs/active-responses.log
 
 <img width="1917" height="587" alt="image" src="https://github.com/user-attachments/assets/5678ffe3-f072-4dec-84ff-1fe255501f55" />
 
+**Terminal 4 — agent 2 , test ping agent 1 setelah di block karena menyerang:**
+```bash
+ping 10.0.0.5
+```
+
+<img width="1918" height="807" alt="Screenshot 2026-06-04 192458" src="https://github.com/user-attachments/assets/198d539f-8991-478b-9de7-40f70207e8b1" />
+
+agaent 2 terblock karena SOAR yang sudah diterapkan
 
 ### Hasil yang Dicapai ✅
 
