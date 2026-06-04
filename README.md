@@ -4,7 +4,6 @@
 ![Wazuh](https://img.shields.io/badge/Wazuh-4.7.5-blue)
 ![Shuffle](https://img.shields.io/badge/Shuffle-Cloud-orange)
 ![Azure](https://img.shields.io/badge/Azure-Student-lightblue)
-![Status](https://img.shields.io/badge/Status-Active-green)
 
 **Mata Kuliah:** Manajemen Insiden Keamanan Siber  
 **Institut:** Institut Teknologi Sepuluh Nopember (ITS)  
@@ -27,7 +26,8 @@
 - [Bagian 2: Wazuh Engineer - Setup API](#-bagian-2-wazuh-engineer---setup-api)
 - [Bagian 3: Setup Shuffle SOAR](#-bagian-3-setup-shuffle-soar)
 - [Bagian 4: Integrasi Wazuh → Shuffle](#-bagian-4-integrasi-wazuh--shuffle)
-- [Bagian 5: Demo & Hasil](#-bagian-5-demo--hasil)
+- [Bagian 5: Integrasi External Tools (Telegram dan Notion)](#bagian-5-integrasi-external-tools)
+- [Bagian 6: Demo & Hasil](#-bagian-6-demo--hasil)
 - [Referensi](#-referensi)
 
 ---
@@ -470,8 +470,62 @@ Output saat berhasil:
 ```
 
 ---
+## Bagian 5: Integrasi External Tools
+### Tools 1: Notion     
+Untuk menghubungkan notion cukup menambahkan API Key untuk Auth, dilanjutkan mengisi param body dan pastikan untuk menggunakan *POST: Create a page with content*
+```body
+{
+  "parent": {
+    "database_id": "edf8c166b00c4523845a9dbe515274a4"
+  },
+  "properties": {
+    "Name": {
+      "title": [
+        {
+          "text": {
+            "content": "🚨 DDoS Attack - ID: $exec.id"
+          }
+        }
+      ]
+    },
+    "Attacker IP": {
+      "rich_text": [
+        {
+          "text": {
+            "content": "$exec.all_fields.data.srcip"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+Sempat bermasalah di notion, karena kurang menambah field notion version, yang lalu dapat diselesaikan dengan mengisi header field di optional parameter:     
+![optional param](Image/notion-version.png)     
+Hasil notion berupa note yang bisa diinteraksikan dalam kanban board:     
+![notion](Image/notion-result.png)      
 
-## 🎯 Bagian 5: Demo & Hasil
+### Tools 2: Telegram Bot     
+Awalnya menggunakan HTTP Node, lalu pindah ke Telegram Bot App dari Shuffler, pemindahan ini didasari agar benar benar mengutilisasi app bawaan Shuffler, terjadi masalah sebelum pesan berhasil masuk:     
+![API Page Telegram](Image/tele-api.png)      
+Solusinya adalah untuk url Auth, ternyata tidak perlu mengisi full link api telegram namun hanya:    
+```field
+https://api.telegram.org/ 
+``` 
+Dimana API Key diisi di field dalam tab setelah auth:
+![API Key Field](Image/tele-field.png)    
+Isi body:
+```body
+{
+  "chat_id": "-5122955270",
+  "text": "🚨 *[Wazuh Alert] DDoS SYN Flood Detected!* 🚨\n\n🔹 *Rule ID:* $exec.rule_id\n🔹 *Alert ID:* $exec.id\n\n📌 *Details:* \n• *Victim (Agent):* $exec.all_fields.agent.name (ID: $exec.all_fields.agent.id)\n• *Victim IP:* $exec.all_fields.data.dstip\n• *Target Port:* $exec.all_fields.data.dstport\n• *Attacker IP:* $exec.all_fields.data.srcip\n• *Protocol:* $exec.all_fields.data.protocol\n\n🛡️ *Mitigation Action:* \n• Active Response `firewall-drop` otomatis dipicu untuk memblokir IP: $exec.all_fields.data.srcip",
+  "parse_mode": "Markdown"
+}
+```
+
+Hasil telegram:      
+![telegram result](Image/tele-result.png)
+## 🎯 Bagian 6: Demo & Hasil
 
 ### Skenario Serangan DDoS
 
@@ -558,33 +612,3 @@ agaent 2 terblock karena SOAR yang sudah diterapkan
 - [Percakapan Claude - Setup Guide](https://claude.ai/share/6f867439-a0e5-47a8-8c6f-656d21dcc85f)
 
 ---
-
-## 📁 Struktur Repository
-
-```
-SIEM-SOAR-Project/
-│   README.md
-│
-└───Image/
-        SetupShuffle_Step1-1_BlockAttackerIP.png
-        SetupShuffle_Step1-5_BlockAttackerIP_and_GetWazzuh_Token.png
-        SetupShuffle_Step2_Setup_Webhook.png
-        SetupShuffle_Step3_Setup_GetWazzuh_Token.png
-        SetupShuffle_Step4_Setup_BlockIP_Token.png
-        SetupShuffle_Step5_TestAction_GetWazzuh_Token.png
-        SetupShuffle_Step6_TestAction_BlockAttackerIP.png
-        WazzuhApi_step1_Setup_WazzuhAPI.png
-        WazzuhApi_step2_WazzuhToken.png
-        WazzuhApi_step3_Test List Agents.png
-        WazzuhApi_step4_Buat User shuffle-user.png
-        WazzuhApi_step5_Assign Role Administrator ke shuffle-user.png
-        WazzuhApi_step6_Test Login sebagai shuffle-user.png
-```
-
----
-
-<div align="center">
-  <p>Made with ❤️ by Kelompok 10 - ITS 2026</p>
-  <p>Manajemen Insiden Keamanan Siber</p>
-</div>
-```
