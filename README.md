@@ -481,16 +481,22 @@ Buka 3 terminal SSH sekaligus:
 ```bash
 sudo hping3 -S -p 80 -c 3000 -i u2000 10.0.0.5
 ```
+<img width="1897" height="972" alt="Screenshot 2026-06-04 191719" src="https://github.com/user-attachments/assets/7564cba6-a46d-4c69-9ff9-2a66ae42efb3" />
 
 **Terminal 2 — agent1 (korban), monitor iptables:**
 ```bash
-watch -n 2 'sudo iptables -L INPUT -n | grep 10.0.0.6'
+watch -n 1 'sudo iptables -L -n | grep DROP'
 ```
 
-**Terminal 3 — manager, monitor log:**
+<img width="1918" height="512" alt="Screenshot 2026-06-04 191959" src="https://github.com/user-attachments/assets/9c000730-891b-454b-9e81-fe2a367375fe" />
+
+**Terminal 3 — agent 1 (korban), monitor log:**
 ```bash
-sudo tail -f /var/ossec/logs/integrations.log
+sudo tail -f /var/ossec/logs/active-responses.log
 ```
+
+<img width="1917" height="587" alt="image" src="https://github.com/user-attachments/assets/5678ffe3-f072-4dec-84ff-1fe255501f55" />
+
 
 ### Hasil yang Dicapai ✅
 
